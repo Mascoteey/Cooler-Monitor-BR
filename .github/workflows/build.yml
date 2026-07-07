@@ -1,0 +1,31 @@
+name: Build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup .NET 9
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 9.0.x
+
+    - name: Restore
+      run: dotnet restore
+
+    - name: Build (x64)
+      run: dotnet build --configuration Release --no-restore /p:Platform=x64
+
+    - name: Build (x86)
+      run: dotnet build --configuration Release --no-restore /p:Platform=x86
+
+    - name: Test
+      run: dotnet test --configuration Release --no-restore --verbosity normal
