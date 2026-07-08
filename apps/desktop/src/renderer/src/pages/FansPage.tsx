@@ -229,6 +229,9 @@ export default function FansPage() {
           const expanded = expandedFan === idx;
           const color = FAN_COLORS[fan.label] || '#00b4ff';
           const targetPwm = getTargetPwm(idx);
+          const isManual = manualOverride[idx];
+          const targetRpm = getTargetRpm(idx, fan);
+          const displayRpm = isManual ? targetRpm : fan.rpm;
           const curve = fanCurves[idx] || [];
           const tempSrc = tempSource[idx] || 'cpu';
           const currentTempVal = currentTemp[tempSrc] || 45;
@@ -243,19 +246,15 @@ export default function FansPage() {
                   <div>
                     <h3 className="text-sm font-semibold">{fan.name}</h3>
                     <p className="text-xs text-[var(--color-muted)]">
-                      {fan.header || 'N/A'} · {fan.mode} · {manualOverride[idx] ? 'Manual' : 'Curva'}
+                      {fan.header || 'N/A'} · {fan.mode} · {isManual ? 'Manual' : profile === 'custom' ? 'Customizado' : PROFILES.find((p) => p.id === profile)?.label || profile}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
-                  <RpmGauge rpm={fan.rpm} minRpm={fan.minRpm || 0} maxRpm={fan.maxRpm || 2500} size={80} />
-                  <div className="text-right min-w-[60px]">
-                    <p className="text-lg font-mono font-bold" style={{ color }}>{getTargetRpm(idx, fan).toFixed(0)}</p>
-                    <p className="text-[10px] text-[var(--color-muted)]">Alvo</p>
-                  </div>
+                  <RpmGauge rpm={displayRpm} minRpm={fan.minRpm || 0} maxRpm={fan.maxRpm || 2500} size={80} />
                   <div className="text-right min-w-[48px]">
-                    <p className="text-xs font-mono text-[var(--color-muted)]">{fan.rpm.toFixed(0)}</p>
-                    <p className="text-[10px] text-[var(--color-muted)]">Real</p>
+                    <p className="text-lg font-mono font-bold" style={{ color }}>{displayRpm.toFixed(0)}</p>
+                    <p className="text-[10px] text-[var(--color-muted)]">{isManual ? 'Manual' : 'Alvo'}</p>
                   </div>
                   <div className="text-right min-w-[48px]">
                     <p className="text-sm font-mono font-bold" style={{ color: targetPwm > 70 ? '#ef4444' : targetPwm > 40 ? '#fbbf24' : '#22c55e' }}>
@@ -324,14 +323,14 @@ export default function FansPage() {
                             <h4 className="text-xs font-semibold text-[var(--color-muted)] mb-2">Informações</h4>
                             <div className="grid grid-cols-2 gap-2 text-xs">
                               {[
-                                { label: 'Velocidade', value: `${fan.rpm.toFixed(0)} RPM` },
-                                { label: 'Duty Cycle', value: `${fan.pwm}%` },
+                                { label: 'Velocidade', value: `${displayRpm.toFixed(0)} RPM` },
+                                { label: 'Duty Cycle', value: `${targetPwm}${isManual ? '% (manual)' : '% (curva)'}` },
+                                { label: 'Leitura real', value: `${fan.rpm.toFixed(0)} RPM / ${fan.pwm}%` },
                                 { label: 'Min RPM', value: `${fan.minRpm || 0}` },
                                 { label: 'Max RPM', value: `${fan.maxRpm || 2500}` },
-                                { label: 'Modo', value: fan.mode },
+                                { label: 'Modo', value: isManual ? 'Override Manual' : `${fan.mode} · Perfil` },
                                 { label: 'Conector', value: fan.header || 'N/A' },
                                 { label: 'Temp. ref.', value: `${currentTempVal.toFixed(1)}°C (${tempSrc.toUpperCase()})` },
-                                { label: 'Status', value: fan.rpm > 0 ? 'Operacional' : 'Parado' },
                               ].map((info, i) => (
                                 <div key={i} className="flex justify-between py-1 border-b border-[#1a1a3e]/50">
                                   <span className="text-[var(--color-muted)]">{info.label}</span>
@@ -344,9 +343,13 @@ export default function FansPage() {
                           <div className="glass-card p-4 bg-[#0a0a1a]/50">
                             <h4 className="text-xs font-semibold text-[var(--color-muted)] mb-2">Ações Rápidas</h4>
                             <div className="flex flex-wrap gap-2">
-                              {[30, 50, 75, 100].map((pct) => (
-                                <button key={pct} onClick={() => { handleManualPwmChange(idx, pct); }}
-                                  className={`px-3 py-1 rounded text-xs font-mono border transition-colors ${manualOverride[idx] && (manualPwm[idx] || 0) === pct ? 'border-[var(--color-primary)] text-[var(--color-primary)]' : 'border-[#1a1a3e] text-[var(--color-muted)] hover:border-[var(--color-primary)]'}`}>
+                              {[20, 40, 60, 80, 100].map((pct) => (
+                                <button key={pct} onClick={() => handleManualPwmChange(idx, pct)}
+                                  className={`px-3 py-1 rounded text-xs font-mono border transition-colors ${
+                                    manualOverride[idx] && (manualPwm[idx] || 0) === pct
+                                      ? 'border-[var(--color-primary)] text-[var(--color-primary)] bg-[var(--color-primary)]/20'
+                                      : 'border-[#1a1a3e] text-[var(--color-muted)] hover:border-[var(--color-primary)]'
+                                  }`}>
                                   {pct}%
                                 </button>
                               ))}
