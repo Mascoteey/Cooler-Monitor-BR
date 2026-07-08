@@ -123,7 +123,7 @@ const TESTS: Array<{
     description: 'Chama setHardwareData e verifica se hardwareData foi atualizado',
     run: async () => {
       try {
-        const testData = { timestamp: Date.now(), cpu: { name: 'TEST', temperature: { current: 0, min: 0, max: 0, avg: 0 }, usage: { current: 0, min: 0, max: 0, avg: 0 }, clock: { current: 0, min: 0, max: 0, avg: 0 }, power: { current: 0, min: 0, max: 0, avg: 0 }, voltage: { current: 0, min: 0, max: 0, avg: 0 }, threads: 0, cores: 0, cache: '', coreDetails: [] }, gpu: { name: 'TEST', temperature: { current: 0, min: 0, max: 0, avg: 0 }, hotspot: { current: 0, min: 0, max: 0, avg: 0 }, usage: { current: 0, min: 0, max: 0, avg: 0 }, clock: { current: 0, min: 0, max: 0, avg: 0 }, memoryClock: { current: 0, min: 0, max: 0, avg: 0 }, memoryUsage: { current: 0, min: 0, max: 0, avg: 0 }, memoryTotal: 0, memoryUsed: 0, fanSpeed: { current: 0, min: 0, max: 0, avg: 0 }, power: { current: 0, min: 0, max: 0, avg: 0 }, voltage: { current: 0, min: 0, max: 0, avg: 0 }, tempLimit: 0 }, ram: { name: '', total: 0, used: 0, usage: { current: 0, min: 0, max: 0, avg: 0 }, available: 0, slots: [] }, storage: [], motherboard: { name: '', temperature: { current: 0, min: 0, max: 0, avg: 0 }, chipsetTemp: { current: 0, min: 0, max: 0, avg: 0 } }, fans: [], network: { interfaces: [] }, sensors: [] } as unknown as HardwareData;
+        const testData = { timestamp: Date.now(), cpu: { name: 'TEST', temperature: { current: 0, min: 0, max: 0, avg: 0 }, usage: { current: 0, min: 0, max: 0, avg: 0 }, clock: { current: 0, min: 0, max: 0, avg: 0 }, power: { current: 0, min: 0, max: 0, avg: 0 }, voltage: { current: 0, min: 0, max: 0, avg: 0 }, threads: 0, cores: 0, cache: '', coreDetails: [] }, gpu: { name: 'TEST', temperature: { current: 0, min: 0, max: 0, avg: 0 }, hotspot: { current: 0, min: 0, max: 0, avg: 0 }, usage: { current: 0, min: 0, max: 0, avg: 0 }, clock: { current: 0, min: 0, max: 0, avg: 0 }, memory: { current: 0, min: 0, max: 0, avg: 0 }, memoryClock: { current: 0, min: 0, max: 0, avg: 0 }, fan: { current: 0, min: 0, max: 0, avg: 0 }, power: { current: 0, min: 0, max: 0, avg: 0 }, voltage: { current: 0, min: 0, max: 0, avg: 0 }, vram: { used: 0, total: 0, usagePercent: 0 }, pcie: { speed: '', width: 0 } }, ram: { name: '', temperature: { current: 0, min: 0, max: 0, avg: 0 }, usage: { current: 0, min: 0, max: 0, avg: 0 }, used: 0, total: 0, frequency: 0, latency: 0, slots: [], channels: { dual: false, channel: '' } }, storage: [], motherboard: { name: '', chipset: { name: '', temperature: 0 }, vrm: { temperature: 0 }, pch: { temperature: 0 }, ambient: { temperature: 0 } }, fans: [], network: [], sensors: [] } as unknown as HardwareData;
         useStore.getState().setHardwareData(testData);
         const updated = useStore.getState().hardwareData;
         if (updated && updated.cpu.name === 'TEST') return { status: 'pass', details: 'Store atualizado corretamente' };
@@ -207,7 +207,7 @@ const TESTS: Array<{
       const data = useStore.getState().hardwareData;
       if (!data) return { status: 'warn', error: 'Nenhum dado de hardware' };
       if (!data.network) return { status: 'fail', error: 'network ausente' };
-      return { status: 'pass', details: `${data.network.interfaces?.length || 0} interface(s)` };
+      return { status: 'pass', details: `${data.network.length} interface(s)` };
     },
   },
   {
@@ -263,7 +263,7 @@ const TESTS: Array<{
     description: 'Verifica se entradas de histórico estão sendo adicionadas',
     run: async () => {
       const initial = useStore.getState().history.length;
-      const testData = { timestamp: Date.now(), cpuTemp: 50, gpuTemp: 45, cpuUsage: 10, ramUsage: 30 };
+      const testData = { timestamp: Date.now(), cpuTemp: 50, gpuTemp: 45, cpuUsage: 10, gpuUsage: 5, ramUsage: 30 };
       useStore.getState().addHistoryEntry(testData);
       await new Promise((r) => setTimeout(r, 50));
       const after = useStore.getState().history.length;

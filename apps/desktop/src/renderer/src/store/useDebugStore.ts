@@ -33,7 +33,7 @@ export interface SystemStatus {
 
 interface DebugState {
   visible: boolean;
-  activeTab: 'status' | 'tests' | 'store' | 'logs';
+  activeTab: 'status' | 'tests' | 'store' | 'logs' | 'perf';
   logs: DebugLog[];
   testResults: TestResult[];
   systemStatus: SystemStatus;

@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Fan, Thermometer, Gauge, Volume2, Settings, ChevronDown, ChevronUp, RotateCcw, Cpu, Monitor, Wind, CheckCircle2 } from 'lucide-react';
+import { Fan, Thermometer, Gauge, Volume2, Settings, ChevronDown, ChevronUp, RotateCcw, Cpu, Monitor, Wind, CheckCircle2, ShieldAlert } from 'lucide-react';
 import PageHeader from '../components/ui/PageHeader';
 import RpmGauge from '../components/charts/RpmGauge';
 import FanCurveEditor from '../components/charts/FanCurveEditor';
@@ -111,7 +111,7 @@ export default function FansPage() {
     setPendingChanges(true);
   };
 
-  const handleManualPwmChange = (idx: number, val: number) => {
+  const handleManualPwmChange = (idx: number, val: number, _fanName?: string) => {
     setManualPwm((prev) => ({ ...prev, [idx]: val }));
     setManualOverride((prev) => ({ ...prev, [idx]: true }));
     setPendingChanges(true);
@@ -396,7 +396,12 @@ export default function FansPage() {
         <div className="glass-card p-12 text-center">
           <Fan className="w-12 h-12 mx-auto text-[var(--color-muted)] mb-4" />
           <p className="text-[var(--color-muted)] mb-2">Nenhuma ventoinha detectada</p>
-          <p className="text-xs text-[var(--color-muted)]">O LibreHardwareMonitor pode precisar de permissões de administrador para detectar sensores de ventoinha.</p>
+          <p className="text-xs text-[var(--color-muted)] mb-4">O acesso aos sensores da placa-mãe requer privilégios de administrador.</p>
+          <button onClick={() => window.electronAPI?.relaunchAsAdmin()}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all"
+            style={{ background: 'linear-gradient(135deg, #f59e0b, #ef4444)', color: '#fff' }}>
+            <ShieldAlert className="w-4 h-4" /> Reiniciar como Administrador
+          </button>
         </div>
       )}
 

@@ -12,5 +12,12 @@ interface Window {
     onHardwareData: (callback: (data: unknown) => void) => () => void;
     checkForUpdates: () => void;
     onUpdateStatus: (callback: (data: unknown) => void) => () => void;
+    showOverlay: () => void;
+    hideOverlay: () => void;
+    toggleOverlay: () => void;
+    updateOverlay: (config: unknown) => void;
+    isOverlayVisible: () => Promise<boolean>;
+    setFanSpeed: (fanName: string, pwm: number) => void;
+    relaunchAsAdmin: () => Promise<{ success: boolean; error?: string }>;
   };
 }

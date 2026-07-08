@@ -13,8 +13,8 @@ interface AppState {
   setHardwareData: (data: HardwareData) => void;
 
   // History
-  history: Array<{ timestamp: number; cpuTemp: number; gpuTemp: number; cpuUsage: number; ramUsage: number }>;
-  addHistoryEntry: (entry: { timestamp: number; cpuTemp: number; gpuTemp: number; cpuUsage: number; ramUsage: number }) => void;
+  history: Array<{ timestamp: number; cpuTemp: number; gpuTemp: number; cpuUsage: number; gpuUsage: number; ramUsage: number }>;
+  addHistoryEntry: (entry: { timestamp: number; cpuTemp: number; gpuTemp: number; cpuUsage: number; gpuUsage: number; ramUsage: number }) => void;
 
   // Theme
   theme: ThemeConfig;
@@ -43,7 +43,19 @@ interface AppState {
     showTemp: boolean;
     fontSize: 'small' | 'medium' | 'large';
   };
-  setOverlayConfig: (config: Partial<typeof state.overlayConfig>) => void;
+  setOverlayConfig: (config: Partial<{
+    enabled: boolean;
+    opacity: number;
+    position: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+    showCpu: boolean;
+    showGpu: boolean;
+    showRam: boolean;
+    showFans: boolean;
+    showFps: boolean;
+    showClock: boolean;
+    showTemp: boolean;
+    fontSize: 'small' | 'medium' | 'large';
+  }>) => void;
 }
 
 export const useStore = create<AppState>((set, get) => ({
@@ -64,6 +76,7 @@ export const useStore = create<AppState>((set, get) => ({
       cpuTemp: data.cpu.temperature.current,
       gpuTemp: data.gpu.temperature.current,
       cpuUsage: data.cpu.usage.current,
+      gpuUsage: data.gpu.usage.current,
       ramUsage: data.ram.usage.current,
     });
   },

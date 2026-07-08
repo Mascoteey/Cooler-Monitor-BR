@@ -16,6 +16,8 @@ let overlayWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
 let hardwareProcess: ChildProcess | null = null;
 let wss: WebSocketServer | null = null;
+let httpServer: import('http').Server | null = null;
+let simInterval: ReturnType<typeof setInterval> | null = null;
 
 const store = new Store({
   defaults: {
@@ -157,6 +159,9 @@ function createTray(): void {
 }
 
 function startHardwareBridge(): void {
+  if (isQuitting) return;
+  clearSimInterval();
+
   let bridgePath: string;
   if (isDev) {
     bridgePath = resolve(__dirname, '../../../../hardware-bridge/CoolerHardwareBridge/bin/Release/net9.0/win-x64/publish/CoolerHardwareBridge.exe');
@@ -182,6 +187,7 @@ function startHardwareBridge(): void {
     hardwareProcess?.stdout?.on('data', (data: Buffer) => {
       if (!receivedAnyData) {
         receivedAnyData = true;
+        clearSimInterval();
         log.info('First bridge data received');
       }
       buffer += data.toString();
@@ -203,7 +209,7 @@ function startHardwareBridge(): void {
     });
 
     setTimeout(() => {
-      if (!receivedAnyData) {
+      if (!receivedAnyData && !isQuitting) {
         log.warn('No bridge data in 5s, using simulated data');
         simulateHardwareData();
       }
@@ -216,11 +222,18 @@ function startHardwareBridge(): void {
 
     hardwareProcess?.on('exit', (code) => {
       log.info('Hardware bridge exited with code:', code);
-      setTimeout(() => startHardwareBridge(), 2000);
+      if (!isQuitting) setTimeout(() => startHardwareBridge(), 2000);
     });
   } catch (err) {
     log.error('Failed to start hardware bridge:', err);
     simulateHardwareData();
+  }
+}
+
+function clearSimInterval(): void {
+  if (simInterval) {
+    clearInterval(simInterval);
+    simInterval = null;
   }
 }
 
@@ -320,7 +333,8 @@ function simulateHardwareData(): void {
     })),
   ];
 
-  setInterval(() => {
+  clearSimInterval();
+  simInterval = setInterval(() => {
     const data = getRandomSensorData();
     data.sensors = allSensors.map((s) => ({ ...s, value: Math.random() * 100 }));
     mainWindow?.webContents.send('hardware-data', data);
@@ -340,6 +354,7 @@ function broadcastSensorData(data: unknown): void {
 
 function startWebSocketServer(): void {
   const server = createServer();
+  httpServer = server;
   wss = new WebSocketServer({ server });
   wss.on('connection', (ws) => {
     log.info('WebSocket client connected');
@@ -404,11 +419,27 @@ ipcMain.handle('overlay-visible', () => {
   return overlayWindow?.isVisible() || false;
 });
 
+ipcMain.handle('relaunch-as-admin', async () => {
+  const args = process.argv.slice(1).map((a) => a.includes(' ') ? `"${a}"` : a).join(' ');
+  try {
+    exec(`powershell -Command "Start-Process '${process.execPath}' -Verb RunAs -ArgumentList '${args}'"`, () => {
+      app.quit();
+    });
+    return { success: true };
+  } catch {
+    return { success: false, error: 'Falha ao solicitar elevação' };
+  }
+});
+
 ipcMain.on('set-fan-speed', (_event, fanName: string, pwm: number) => {
   if (hardwareProcess && !hardwareProcess.killed && hardwareProcess.stdin) {
     const cmd = JSON.stringify({ fan: fanName, pwm }) + '\n';
     hardwareProcess.stdin.write(cmd);
     log.info(`Fan control sent: ${fanName} → ${pwm}%`);
+    mainWindow?.webContents.send('fan-control-result', { success: true, fan: fanName, pwm });
+  } else {
+    log.warn(`Fan control ignored (no bridge running): ${fanName} → ${pwm}%`);
+    mainWindow?.webContents.send('fan-control-result', { success: false, fan: fanName, pwm, error: 'Bridge não está em execução' });
   }
 });
 
@@ -455,14 +486,22 @@ app.whenReady().then(() => {
 function cleanup(): void {
   isQuitting = true;
 
+  clearSimInterval();
+
   if (hardwareProcess) {
-    hardwareProcess.kill('SIGTERM');
+    try { hardwareProcess.kill('SIGTERM'); } catch { /* ignore */ }
     hardwareProcess = null;
   }
 
   if (wss) {
+    wss.clients.forEach((c) => { try { c.terminate(); } catch { /* ignore */ } });
     wss.close();
     wss = null;
+  }
+
+  if (httpServer) {
+    try { httpServer.close(); } catch { /* ignore */ }
+    httpServer = null;
   }
 
   if (tray) {

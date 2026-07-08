@@ -2,15 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import { Cpu, Monitor, MemoryStick, Fan, Thermometer, Activity, Clock } from 'lucide-react';
 import { useStore } from '../store/useStore';
 
-declare global {
-  interface Window {
-    electronAPI?: {
-      onHardwareData: (cb: (data: any) => void) => () => void;
-      isOverlayVisible: () => Promise<boolean>;
-    };
-  }
-}
-
 interface DisplayData {
   cpuTemp: number;
   cpuUsage: number;
@@ -41,7 +32,7 @@ export default function OverlayDisplay() {
   const fpsFrames = useRef<number[]>([]);
 
   useEffect(() => {
-    const cleanup = window.electronAPI?.onHardwareData((d) => {
+    const cleanup = window.electronAPI?.onHardwareData((d: any) => {
       if (!d) return;
       setData({
         cpuTemp: Math.round(d.cpu?.temperature?.current ?? 0),

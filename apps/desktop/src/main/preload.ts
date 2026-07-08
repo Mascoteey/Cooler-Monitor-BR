@@ -29,6 +29,9 @@ const api = {
 
   // Fan control
   setFanSpeed: (fanName: string, pwm: number) => ipcRenderer.send('set-fan-speed', fanName, pwm),
+
+  // Admin
+  relaunchAsAdmin: () => ipcRenderer.invoke('relaunch-as-admin'),
 };
 
 contextBridge.exposeInMainWorld('electronAPI', api);

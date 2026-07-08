@@ -85,28 +85,17 @@ public class Program
         }
     }
 
+    private static readonly object ComputerLock = new();
+
     private static void SetFanControl(string fanName, double pwm)
     {
         float val = (float)Math.Clamp(pwm, 0.0, 100.0);
-        foreach (var hardware in _computer.Hardware)
+        lock (ComputerLock)
         {
-            hardware.Update();
-            foreach (var sensor in hardware.Sensors)
+            foreach (var hardware in _computer.Hardware)
             {
-                if (sensor.SensorType == SensorType.Fan && sensor.Control != null)
-                {
-                    if (sensor.Name.IndexOf(fanName, StringComparison.OrdinalIgnoreCase) >= 0)
-                    {
-                        sensor.Control.SetSoftware(val);
-                        Console.Error.WriteLine($"[BRIDGE] Fan control: {sensor.Name} → {pwm}%");
-                        return;
-                    }
-                }
-            }
-            foreach (var sub in hardware.SubHardware)
-            {
-                sub.Update();
-                foreach (var sensor in sub.Sensors)
+                hardware.Update();
+                foreach (var sensor in hardware.Sensors)
                 {
                     if (sensor.SensorType == SensorType.Fan && sensor.Control != null)
                     {
@@ -115,6 +104,22 @@ public class Program
                             sensor.Control.SetSoftware(val);
                             Console.Error.WriteLine($"[BRIDGE] Fan control: {sensor.Name} → {pwm}%");
                             return;
+                        }
+                    }
+                }
+                foreach (var sub in hardware.SubHardware)
+                {
+                    sub.Update();
+                    foreach (var sensor in sub.Sensors)
+                    {
+                        if (sensor.SensorType == SensorType.Fan && sensor.Control != null)
+                        {
+                            if (sensor.Name.IndexOf(fanName, StringComparison.OrdinalIgnoreCase) >= 0)
+                            {
+                                sensor.Control.SetSoftware(val);
+                                Console.Error.WriteLine($"[BRIDGE] Fan control: {sensor.Name} → {pwm}%");
+                                return;
+                            }
                         }
                     }
                 }
@@ -127,7 +132,10 @@ public class Program
     {
         try
         {
-            _computer.Accept(new UpdateVisitor());
+            lock (ComputerLock)
+            {
+                _computer.Accept(new UpdateVisitor());
+            }
             var data = CollectSensorData();
             var json = JsonSerializer.Serialize(data, JsonOptions);
             Console.Out.WriteLine(json);
@@ -224,16 +232,20 @@ public class Program
     private static void FillCpuData(IHardware hardware, HardwareDataDto data)
     {
         data.Cpu.Name = hardware.Name;
+        double temp = -1;
         foreach (var sensor in hardware.Sensors)
         {
             var v = Sanitize(sensor.Value);
             switch (sensor.SensorType)
             {
                 case SensorType.Temperature:
-                    data.Cpu.Temperature = v;
+                    if (sensor.Name.Contains("Package") || sensor.Name.Contains("Core Max") || sensor.Name.Contains("CPU"))
+                        temp = temp < 0 ? v : Math.Max(temp, v);
                     break;
                 case SensorType.Load:
-                    if (sensor.Name.Contains("Total") || sensor.Name.Contains("CPU Core"))
+                    if (sensor.Name.Contains("Total") && data.Cpu.Usage == 0)
+                        data.Cpu.Usage = v;
+                    else if (sensor.Name == "CPU Total")
                         data.Cpu.Usage = v;
                     break;
                 case SensorType.Clock:
@@ -250,6 +262,7 @@ public class Program
                     break;
             }
         }
+        if (temp >= 0) data.Cpu.Temperature = temp;
     }
 
     private static void FillGpuData(IHardware hardware, HardwareDataDto data)
@@ -265,16 +278,9 @@ public class Program
                     else data.Gpu.Temperature = v;
                     break;
                 case SensorType.Load:
-                    if (sensor.Name.Contains("D3D") && data.Gpu.Name.Contains("RTX 40"))
-                    {
-                        var memLoad = v;
-                        break;
-                    }
                     if (sensor.Name.Contains("Memory") || sensor.Name.Contains("VRAM"))
                         data.Gpu.MemoryLoad = v;
-                    else if (sensor.Name.Contains("GPU Core"))
-                        data.Gpu.Usage = v;
-                    else
+                    else if (sensor.Name.Contains("GPU Core") || sensor.Name.Contains("D3D 3D"))
                         data.Gpu.Usage = v;
                     break;
                 case SensorType.Clock:
@@ -292,12 +298,17 @@ public class Program
                 case SensorType.Voltage:
                     data.Gpu.Voltage = v;
                     break;
+                case SensorType.Data:
+                    if (sensor.Name.Contains("Total")) data.Gpu.MemoryTotal = v;
+                    else if (sensor.Name.Contains("Used")) data.Gpu.MemoryUsed = v;
+                    break;
             }
         }
     }
 
     private static void FillMemoryData(IHardware hardware, HardwareDataDto data)
     {
+        const double bytesToGb = 1.0 / (1024.0 * 1024.0 * 1024.0);
         data.Ram.Name = hardware.Name;
         foreach (var sensor in hardware.Sensors)
         {
@@ -308,15 +319,18 @@ public class Program
                     data.Ram.Usage = v;
                     break;
                 case SensorType.Data:
-                    if (sensor.Name.Contains("Used")) data.Ram.Used = v;
-                    else if (sensor.Name.Contains("Available")) data.Ram.Available = v;
+                    if (sensor.Name.Contains("Used")) data.Ram.Used = v * bytesToGb;
+                    else if (sensor.Name.Contains("Available")) data.Ram.Available = v * bytesToGb;
                     break;
             }
         }
+        if (data.Ram.Used > 0 && data.Ram.Available > 0)
+            data.Ram.Total = data.Ram.Used + data.Ram.Available;
     }
 
     private static void FillStorageData(IHardware hardware, HardwareDataDto data)
     {
+        const double bytesToGb = 1.0 / (1024.0 * 1024.0 * 1024.0);
         var storage = new StorageDto { Name = hardware.Name };
         foreach (var sensor in hardware.Sensors)
         {
@@ -330,15 +344,16 @@ public class Program
                     if (sensor.Name.Contains("Used"))
                     {
                         storage.UsedPercent = v;
-                        storage.Used = v;
                     }
                     break;
                 case SensorType.Data:
-                    if (sensor.Name.Contains("Total")) storage.Total = v;
-                    else storage.Used = v;
+                    if (sensor.Name.Contains("Total")) storage.Total = v * bytesToGb;
+                    else if (sensor.Name.Contains("Used")) storage.Used = v * bytesToGb;
                     break;
             }
         }
+        if (storage.Total > 0 && storage.Used > 0)
+            storage.UsedPercent = storage.Used / storage.Total * 100;
         data.Storage.Add(storage);
     }
 
@@ -357,8 +372,8 @@ public class Program
                         data.Motherboard.Vrm = v;
                     else if (sensor.Name.Contains("Ambient") || sensor.Name.Contains("System"))
                         data.Motherboard.Ambient = v;
-                    else
-                        data.Motherboard.Pch = v;
+                    else if (sensor.Name.Contains("CPU"))
+                        data.Motherboard.CpuTemp = v;
                     break;
                 case SensorType.Fan:
                     data.Fans.Add(new FanDto
@@ -404,6 +419,8 @@ public class SensorGroupDto
     [JsonPropertyName("hotspot")] public double Hotspot { get; set; }
     [JsonPropertyName("memoryClock")] public double MemoryClock { get; set; }
     [JsonPropertyName("memoryLoad")] public double MemoryLoad { get; set; } = 0;
+    [JsonPropertyName("memoryTotal")] public double MemoryTotal { get; set; }
+    [JsonPropertyName("memoryUsed")] public double MemoryUsed { get; set; }
     [JsonPropertyName("fan")] public double Fan { get; set; }
 }
 
@@ -413,6 +430,7 @@ public class MemoryDto
     [JsonPropertyName("usage")] public double Usage { get; set; }
     [JsonPropertyName("used")] public double Used { get; set; }
     [JsonPropertyName("available")] public double Available { get; set; }
+    [JsonPropertyName("total")] public double Total { get; set; }
 }
 
 public class StorageDto
@@ -431,6 +449,7 @@ public class MotherboardDto
     [JsonPropertyName("vrm")] public double Vrm { get; set; }
     [JsonPropertyName("pch")] public double Pch { get; set; }
     [JsonPropertyName("ambient")] public double Ambient { get; set; }
+    [JsonPropertyName("cpuTemp")] public double CpuTemp { get; set; }
 }
 
 public class FanDto

@@ -139,6 +139,12 @@
 - Windows 10/11 (64-bit)
 - .NET 9 Runtime (instalado automaticamente com Windows Update ou manualmente em [dotnet.microsoft.com](https://dotnet.microsoft.com/en-us/download/dotnet/9.0))
 
+### ⚠️ Permissões de Administrador
+Para acessar **todos os sensores** (temperatura CPU, ventoinhas da placa-mãe, Super I/O):
+- **Recomendado**: Execute o programa como **Administrador** (botão direito → Executar como administrador)
+- Sem admin: GPU, RAM, uso de CPU e rede funcionam normalmente; fans e temperaturas da placa-mãe usam fallback sintético
+- Na página **Fans**, há um botão **"Reiniciar como Administrador"** para elevar privilégios sob demanda
+
 ---
 
 ## 🎮 Como Usar

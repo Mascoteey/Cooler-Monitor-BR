@@ -22,7 +22,7 @@ export default function GpuPage() {
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="glass-card p-5"><RealtimeChart dataKey="gpuTemp" color="var(--color-secondary)" label="Temperatura GPU" height={250} /></div>
-        <div className="glass-card p-5"><RealtimeChart dataKey="cpuUsage" color="#b400ff" label="Uso GPU" height={250} /></div>
+        <div className="glass-card p-5"><RealtimeChart dataKey="gpuUsage" color="#b400ff" label="Uso GPU" height={250} /></div>
       </div>
     </motion.div>
   );

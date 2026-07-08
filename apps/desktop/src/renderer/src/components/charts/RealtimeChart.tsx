@@ -3,7 +3,7 @@ import { useStore } from '../../store/useStore';
 import { useMemo } from 'react';
 
 interface RealtimeChartProps {
-  dataKey: 'cpuTemp' | 'gpuTemp' | 'cpuUsage' | 'ramUsage';
+  dataKey: 'cpuTemp' | 'gpuTemp' | 'cpuUsage' | 'gpuUsage' | 'ramUsage';
   color?: string;
   label?: string;
   points?: number;
