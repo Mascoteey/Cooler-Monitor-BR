@@ -1,6 +1,6 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Fan, Thermometer, Gauge, Volume2, Settings, ChevronDown, ChevronUp, RotateCcw, Cpu, Monitor, Wind } from 'lucide-react';
+import { Fan, Thermometer, Gauge, Volume2, Settings, ChevronDown, ChevronUp, RotateCcw, Cpu, Monitor, Wind, CheckCircle2 } from 'lucide-react';
 import PageHeader from '../components/ui/PageHeader';
 import RpmGauge from '../components/charts/RpmGauge';
 import FanCurveEditor from '../components/charts/FanCurveEditor';
@@ -38,6 +38,8 @@ export default function FansPage() {
   const [tempSource, setTempSource] = useState<Record<number, 'cpu' | 'gpu' | 'motherboard'>>({});
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [appliedProfile, setAppliedProfile] = useState<string | null>(null);
+  const [pendingChanges, setPendingChanges] = useState(false);
+  const [confirming, setConfirming] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -98,6 +100,7 @@ export default function FansPage() {
       setManualOverride(override);
     }
     setAppliedProfile(id);
+    setPendingChanges(true);
     setTimeout(() => setAppliedProfile(null), 2000);
     setShowProfileMenu(false);
   };
@@ -105,19 +108,35 @@ export default function FansPage() {
   const handleCurveChange = (idx: number, points: FanCurvePoint[]) => {
     setFanCurves((prev) => ({ ...prev, [idx]: points }));
     if (profile !== 'custom') setProfile('custom');
+    setPendingChanges(true);
   };
 
-  const handleManualPwmChange = (idx: number, val: number, fanName?: string) => {
+  const handleManualPwmChange = (idx: number, val: number) => {
     setManualPwm((prev) => ({ ...prev, [idx]: val }));
     setManualOverride((prev) => ({ ...prev, [idx]: true }));
-    if (fanName && window.electronAPI?.setFanSpeed) {
-      window.electronAPI.setFanSpeed(fanName, val);
-    }
+    setPendingChanges(true);
   };
 
   const releaseOverride = (idx: number) => {
     setManualOverride((prev) => ({ ...prev, [idx]: false }));
+    setPendingChanges(true);
   };
+
+  const applyChanges = useCallback(() => {
+    setConfirming(true);
+    const cmds: { name: string; pwm: number }[] = [];
+    fans.forEach((fan, idx) => {
+      if (manualOverride[idx]) {
+        const pwm = manualPwm[idx] || 0;
+        cmds.push({ name: fan.name, pwm });
+        if (window.electronAPI?.setFanSpeed) {
+          window.electronAPI.setFanSpeed(fan.name, pwm);
+        }
+      }
+    });
+    setPendingChanges(false);
+    setTimeout(() => setConfirming(false), 1500);
+  }, [fans, manualOverride, manualPwm]);
 
   const getTargetPwm = (fanIdx: number) => {
     if (manualOverride[fanIdx]) return manualPwm[fanIdx] || 0;
@@ -380,6 +399,24 @@ export default function FansPage() {
           <p className="text-xs text-[var(--color-muted)]">O LibreHardwareMonitor pode precisar de permissões de administrador para detectar sensores de ventoinha.</p>
         </div>
       )}
+
+      <AnimatePresence>
+        {pendingChanges && (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }}
+            className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 glass-card px-6 py-3 border-[var(--color-primary)] shadow-xl shadow-[var(--color-primary)]/20">
+            <span className="text-xs text-[var(--color-muted)]">Alterações pendentes</span>
+            <button onClick={applyChanges}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all"
+              style={{ background: confirming ? '#22c55e' : 'linear-gradient(135deg, #00b4ff, #7c3aed)', color: '#fff' }}>
+              {confirming ? (
+                <><CheckCircle2 className="w-4 h-4" /> Aplicado!</>
+              ) : (
+                <><CheckCircle2 className="w-4 h-4" /> Aplicar</>
+              )}
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }
