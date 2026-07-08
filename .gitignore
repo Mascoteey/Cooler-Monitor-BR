@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 node_modules/
 dist/
 dist-electron/
@@ -11,6 +12,7 @@ hardware-bridge/**/bin/
 hardware-bridge/**/obj/
 *.vs/
 bridge_*.json
+bridge_err.log
 Thumbs.db
 .DS_Store
 .vite/
@@ -22,3 +24,36 @@ out/
 *.nupkg
 coverage/
 .turbo/
+=======
+## .NET
+bin/
+obj/
+*.user
+*.suo
+*.sln.docstates
+*.userprefs
+**/packages/
+*.nupkg
+
+## Visual Studio
+.vs/
+*.csproj.user
+*.dbmdl
+*.jfm
+
+## JetBrains Rider
+.idea/
+*.sln.iml
+
+## OS generated
+.DS_Store
+Thumbs.db
+
+## Build
+Release/
+Publish/
+
+## Logs
+logs/
+*.log
+>>>>>>> 6d64c33cec039de90bbb2275382368328252dcfc

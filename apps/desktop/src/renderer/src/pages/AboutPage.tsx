@@ -20,8 +20,9 @@ export default function AboutPage() {
           <div className="p-4 rounded-xl bg-white/5"><span className="block text-2xl font-bold font-mono text-[var(--color-accent)]">React 18</span><span className="text-xs text-[var(--color-muted)]">UI Library</span></div>
         </div>
         <div className="space-y-3 text-sm">
-          <p className="text-[var(--color-muted)]">Desenvolvido com <Heart className="w-4 h-4 inline text-red-500" /> no Brasil</p>
+          <p className="text-[var(--color-muted)]">Desenvolvido com <Heart className="w-4 h-4 inline text-red-500" /> no Brasil por <span className="text-[var(--color-primary)] font-semibold">Mascoteey</span></p>
           <p className="text-[var(--color-muted)]">LibreHardwareMonitor • Electron • React • TypeScript • TailwindCSS</p>
+          <p className="text-xs text-[var(--color-muted)]">Criado com assistência da <span className="text-[#10a37f] font-medium">OpenCode AI</span></p>
         </div>
         <div className="flex items-center justify-center gap-4 pt-4">
           <a href="https://github.com/Mascoteey/Cooler-Monitor-BR" target="_blank" className="flex items-center gap-2 p-2 rounded-lg bg-white/5 hover:bg-white/10 text-[var(--color-muted)] transition-colors"><Github className="w-4 h-4" /> GitHub</a>

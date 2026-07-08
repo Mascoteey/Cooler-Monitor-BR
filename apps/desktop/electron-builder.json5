@@ -25,12 +25,22 @@
       {
         "target": "nsis",
         "arch": ["x64"]
+      },
+      {
+        "target": "portable",
+        "arch": ["x64"]
       }
     ],
     "icon": "../../assets/icons/icon.png",
     "signAndEditExecutable": false,
     "signDlls": false,
     "publisherName": "COOLER MONITOR BR"
+  },
+  "portable": {
+    "artifactName": "${productName} Portable ${version}.${ext}",
+    "requestExecutionLevel": "user",
+    "unpackDirName": "cooler-monitor-br-data",
+    "useZip": false
   },
   "nsis": {
     "oneClick": false,

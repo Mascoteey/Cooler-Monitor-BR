@@ -1,0 +1,168 @@
+<Window x:Class="CoolerMonitorBR.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:oxy="http://oxyplot.org/wpf"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:CoolerMonitorBR.ViewModels"
+        mc:Ignorable="d"
+        Title="Cooler Monitor BR"
+        Height="650" Width="900"
+        MinHeight="500" MinWidth="700"
+        WindowStartupLocation="CenterScreen"
+        Background="#1E1E2E"
+        TextElement.Foreground="#CDD6F4"
+        FontFamily="Segoe UI, sans-serif"
+        ResizeMode="CanMinimize">
+    <Window.Resources>
+        <Style TargetType="ListViewItem">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="#CDD6F4" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListViewItem">
+                        <Border Name="Border" Padding="4,2" Background="{TemplateBinding Background}">
+                            <ContentPresenter />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Background="#181825" CornerRadius="8" Padding="16" Margin="0,0,0,8">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="CPU: " FontSize="24" FontWeight="SemiBold" Foreground="#A6ADC8" />
+                    <TextBlock Text="{Binding CpuTemp}" FontSize="28" FontWeight="Bold" Foreground="#F38BA8" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="GPU: " FontSize="24" FontWeight="SemiBold" Foreground="#A6ADC8" />
+                    <TextBlock Text="{Binding GpuTemp}" FontSize="28" FontWeight="Bold" Foreground="#89B4FA" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="2" Orientation="Horizontal">
+                    <Button Content="▶" Width="36" Height="36"
+                            Command="{Binding ToggleMonitoringCommand}"
+                            Background="#313244" Foreground="#A6E3A1"
+                            BorderThickness="0" FontSize="18"
+                            ToolTip="Iniciar/Parar monitoramento" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="1" Margin="0,0,0,4">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0" Background="#181825" CornerRadius="8" Padding="8" Margin="2">
+                <StackPanel>
+                    <TextBlock Text="CPU" FontSize="14" FontWeight="Bold" Foreground="#F38BA8" Margin="0,0,0,4" />
+                    <ListView ItemsSource="{Binding CpuSensors}" Background="Transparent"
+                              BorderThickness="0" ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                              ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                        <ListView.ItemTemplate>
+                            <DataTemplate>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="{Binding Name}" FontSize="11" TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Grid.Column="1" Text="{Binding DisplayValue}" FontSize="11" FontWeight="Bold" Foreground="#F38BA8" />
+                                </Grid>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                </StackPanel>
+            </Border>
+
+            <Border Grid.Column="1" Background="#181825" CornerRadius="8" Padding="8" Margin="2">
+                <StackPanel>
+                    <TextBlock Text="GPU" FontSize="14" FontWeight="Bold" Foreground="#89B4FA" Margin="0,0,0,4" />
+                    <ListView ItemsSource="{Binding GpuSensors}" Background="Transparent"
+                              BorderThickness="0" ScrollViewer.VerticalScrollBarVisibility="Disabled">
+                        <ListView.ItemTemplate>
+                            <DataTemplate>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="{Binding Name}" FontSize="11" TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Grid.Column="1" Text="{Binding DisplayValue}" FontSize="11" FontWeight="Bold" Foreground="#89B4FA" />
+                                </Grid>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                </StackPanel>
+            </Border>
+
+            <Border Grid.Column="2" Background="#181825" CornerRadius="8" Padding="8" Margin="2">
+                <StackPanel>
+                    <TextBlock Text="Discos" FontSize="14" FontWeight="Bold" Foreground="#A6E3A1" Margin="0,0,0,4" />
+                    <ListView ItemsSource="{Binding DiskSensors}" Background="Transparent"
+                              BorderThickness="0" ScrollViewer.VerticalScrollBarVisibility="Disabled">
+                        <ListView.ItemTemplate>
+                            <DataTemplate>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="{Binding Name}" FontSize="11" TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Grid.Column="1" Text="{Binding DisplayValue}" FontSize="11" FontWeight="Bold" Foreground="#A6E3A1" />
+                                </Grid>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                </StackPanel>
+            </Border>
+
+            <Border Grid.Column="3" Background="#181825" CornerRadius="8" Padding="8" Margin="2">
+                <StackPanel>
+                    <TextBlock Text="Placa Mãe" FontSize="14" FontWeight="Bold" Foreground="#F9E2AF" Margin="0,0,0,4" />
+                    <ListView ItemsSource="{Binding MotherboardSensors}" Background="Transparent"
+                              BorderThickness="0" ScrollViewer.VerticalScrollBarVisibility="Disabled">
+                        <ListView.ItemTemplate>
+                            <DataTemplate>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="{Binding Name}" FontSize="11" TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Grid.Column="1" Text="{Binding DisplayValue}" FontSize="11" FontWeight="Bold" Foreground="#F9E2AF" />
+                                </Grid>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <Border Grid.Row="2" Background="#181825" CornerRadius="8" Padding="8">
+            <oxy:PlotView Model="{Binding ChartModel}" />
+        </Border>
+    </Grid>
+</Window>

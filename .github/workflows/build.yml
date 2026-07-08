@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 name: Build and Release
 
 on:
@@ -6,12 +7,22 @@ on:
     tags: ['v*']
   pull_request:
     branches: [main]
+=======
+name: Build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+>>>>>>> 6d64c33cec039de90bbb2275382368328252dcfc
 
 jobs:
   build:
     runs-on: windows-latest
 
     steps:
+<<<<<<< HEAD
       - uses: actions/checkout@v4
 
       - name: Setup Node.js 20
@@ -77,3 +88,23 @@ jobs:
         with:
           files: release/*.exe
           generate_release_notes: true
+=======
+    - uses: actions/checkout@v4
+
+    - name: Setup .NET 9
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 9.0.x
+
+    - name: Restore
+      run: dotnet restore
+
+    - name: Build (x64)
+      run: dotnet build --configuration Release --no-restore /p:Platform=x64
+
+    - name: Build (x86)
+      run: dotnet build --configuration Release --no-restore /p:Platform=x86
+
+    - name: Test
+      run: dotnet test --configuration Release --no-restore --verbosity normal
+>>>>>>> 6d64c33cec039de90bbb2275382368328252dcfc
