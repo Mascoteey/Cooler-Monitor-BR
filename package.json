@@ -1,0 +1,29 @@
+{
+  "name": "cooler-monitor-br",
+  "version": "1.0.0",
+  "private": true,
+  "description": "COOLER MONITOR BR - Software profissional de monitoramento de hardware",
+  "author": "COOLER MONITOR BR",
+  "license": "MIT",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "cd apps/desktop && npm run dev",
+    "build": "cd apps/desktop && npm run build",
+    "lint": "cd apps/desktop && npm run lint",
+    "typecheck": "cd apps/desktop && npm run typecheck",
+    "test": "cd apps/desktop && npm run test",
+    "release": "cd apps/desktop && npm run release",
+    "hardware:build": "cd hardware-bridge/CoolerHardwareBridge && dotnet build -c Release",
+    "db:migrate": "cd apps/backend && npx prisma migrate dev",
+    "db:generate": "cd apps/backend && npx prisma generate"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "electron": "^28.0.0"
+  }
+}

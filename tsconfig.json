@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "outDir": "dist",
+    "baseUrl": ".",
+    "paths": {
+      "@cooler-monitor/core": ["packages/core/src"],
+      "@cooler-monitor/hardware": ["packages/hardware/src"],
+      "@cooler-monitor/database": ["packages/database/src"],
+      "@cooler-monitor/shared": ["packages/shared/src"],
+      "@cooler-monitor/ui": ["packages/ui/src"],
+      "@cooler-monitor/utils": ["packages/utils/src"]
+    }
+  },
+  "exclude": ["node_modules", "dist", "release"]
+}

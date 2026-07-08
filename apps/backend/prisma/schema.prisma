@@ -1,0 +1,100 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./cooler-monitor.db"
+}
+
+model User {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  settings Settings?
+  profiles Profile[]
+  logs     Log[]
+}
+
+model Settings {
+  id             String @id @default(uuid())
+  userId         String @unique
+  user           User   @relation(fields: [userId], references: [id])
+  theme          String @default("dark")
+  language       String @default("pt-BR")
+  updateInterval Int    @default(1000)
+  startMinimized Boolean @default(false)
+  minimizeToTray Boolean @default(true)
+}
+
+model Profile {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+  name   String
+  config String
+}
+
+model SensorHistory {
+  id        String   @id @default(uuid())
+  timestamp DateTime @default(now())
+  sensor    String
+  value     Float
+  unit      String
+  category  String
+}
+
+model Alert {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  name      String
+  sensor    String
+  condition String
+  value     Float
+  enabled   Boolean  @default(true)
+  notify    Boolean  @default(true)
+  sound     Boolean  @default(false)
+  popup     Boolean  @default(false)
+  log       Boolean  @default(true)
+  triggered Boolean  @default(false)
+}
+
+model Theme {
+  id        String @id @default(uuid())
+  name      String @unique
+  primary   String @default("#00b4ff")
+  secondary String @default("#7c3aed")
+  accent    String @default("#00f5ff")
+  background String @default("#0a0a1a")
+  card      String @default("#111122")
+  text      String @default("#e2e8f0")
+}
+
+model Log {
+  id        String   @id @default(uuid())
+  timestamp DateTime @default(now())
+  level     String
+  message   String
+  source    String
+
+  userId String?
+  user   User?  @relation(fields: [userId], references: [id])
+}
+
+model Benchmark {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  type      String
+  score     Float
+  details   String
+}
+
+model UpdateInfo {
+  id        String   @id @default(uuid())
+  version   String
+  releasedAt DateTime
+  url       String
+  notes     String
+  installedAt DateTime?
+}

@@ -1,0 +1,53 @@
+{
+  "$schema": "https://raw.githubusercontent.com/electron-userland/electron-builder/master/packages/app-builder-lib/scheme.json",
+  "appId": "com.coolermonitor.br",
+  "productName": "COOLER MONITOR BR",
+  "copyright": "Copyright © 2024 COOLER MONITOR BR",
+  "directories": {
+    "output": "../../release",
+    "buildResources": "../../assets"
+  },
+  "files": [
+    "dist-electron/**/*",
+    "dist/**/*",
+    "package.json"
+  ],
+  "nodeGypRebuild": false,
+  "extraResources": [
+    {
+      "from": "../../hardware-bridge/CoolerHardwareBridge/bin/Release/net9.0/win-x64/publish",
+      "to": "hardware-bridge",
+      "filter": ["**/*"]
+    }
+  ],
+  "win": {
+    "target": [
+      {
+        "target": "nsis",
+        "arch": ["x64"]
+      }
+    ],
+    "icon": "../../assets/icons/icon.png",
+    "signAndEditExecutable": false,
+    "signDlls": false,
+    "publisherName": "COOLER MONITOR BR"
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true,
+    "shortcutName": "COOLER MONITOR BR",
+    "language": "1046"
+  },
+  "publish": {
+    "provider": "github",
+    "owner": "Mascoteey",
+    "repo": "Cooler-Monitor-BR",
+    "releaseType": "release"
+  },
+  "electronVersion": "28.0.0",
+  "electronDownload": {
+    "version": "28.0.0"
+  }
+}
