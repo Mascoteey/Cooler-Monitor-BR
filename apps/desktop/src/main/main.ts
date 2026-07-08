@@ -404,6 +404,14 @@ ipcMain.handle('overlay-visible', () => {
   return overlayWindow?.isVisible() || false;
 });
 
+ipcMain.on('set-fan-speed', (_event, fanName: string, pwm: number) => {
+  if (hardwareProcess && !hardwareProcess.killed && hardwareProcess.stdin) {
+    const cmd = JSON.stringify({ fan: fanName, pwm }) + '\n';
+    hardwareProcess.stdin.write(cmd);
+    log.info(`Fan control sent: ${fanName} → ${pwm}%`);
+  }
+});
+
 ipcMain.on('check-for-updates', () => {
   autoUpdater.checkForUpdates();
 });

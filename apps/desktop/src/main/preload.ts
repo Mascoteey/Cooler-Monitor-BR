@@ -26,6 +26,9 @@ const api = {
   toggleOverlay: () => ipcRenderer.send('overlay-toggle'),
   updateOverlay: (config: unknown) => ipcRenderer.send('overlay-update', config),
   isOverlayVisible: () => ipcRenderer.invoke('overlay-visible'),
+
+  // Fan control
+  setFanSpeed: (fanName: string, pwm: number) => ipcRenderer.send('set-fan-speed', fanName, pwm),
 };
 
 contextBridge.exposeInMainWorld('electronAPI', api);

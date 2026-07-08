@@ -107,9 +107,12 @@ export default function FansPage() {
     if (profile !== 'custom') setProfile('custom');
   };
 
-  const handleManualPwmChange = (idx: number, val: number) => {
+  const handleManualPwmChange = (idx: number, val: number, fanName?: string) => {
     setManualPwm((prev) => ({ ...prev, [idx]: val }));
     setManualOverride((prev) => ({ ...prev, [idx]: true }));
+    if (fanName && window.electronAPI?.setFanSpeed) {
+      window.electronAPI.setFanSpeed(fanName, val);
+    }
   };
 
   const releaseOverride = (idx: number) => {
@@ -310,7 +313,7 @@ export default function FansPage() {
                               <div className="flex-1 flex items-center gap-3">
                                 <span className="text-xs text-[var(--color-muted)] w-6">0%</span>
                                 <input type="range" min={0} max={100} value={manualOverride[idx] ? manualPwm[idx] || 0 : targetPwm}
-                                  onChange={(e) => handleManualPwmChange(idx, Number(e.target.value))}
+                                  onChange={(e) => handleManualPwmChange(idx, Number(e.target.value), fan.name)}
                                   className="flex-1 h-1.5 rounded-full appearance-none cursor-pointer"
                                   style={{ background: `linear-gradient(to right, ${color}40, ${color})`, height: 6, borderRadius: 3, accentColor: color }} />
                                 <span className="text-xs text-[var(--color-muted)] w-6">100%</span>
@@ -344,7 +347,7 @@ export default function FansPage() {
                             <h4 className="text-xs font-semibold text-[var(--color-muted)] mb-2">Ações Rápidas</h4>
                             <div className="flex flex-wrap gap-2">
                               {[20, 40, 60, 80, 100].map((pct) => (
-                                <button key={pct} onClick={() => handleManualPwmChange(idx, pct)}
+                                <button key={pct} onClick={() => handleManualPwmChange(idx, pct, fan.name)}
                                   className={`px-3 py-1 rounded text-xs font-mono border transition-colors ${
                                     manualOverride[idx] && (manualPwm[idx] || 0) === pct
                                       ? 'border-[var(--color-primary)] text-[var(--color-primary)] bg-[var(--color-primary)]/20'

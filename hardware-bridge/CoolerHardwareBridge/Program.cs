@@ -4,6 +4,12 @@ using LibreHardwareMonitor.Hardware;
 
 namespace CoolerHardwareBridge;
 
+internal class FanControlCommand
+{
+    public string? Fan { get; set; }
+    public double? Pwm { get; set; }
+}
+
 public class Program
 {
     private static Computer _computer = null!;
@@ -42,8 +48,79 @@ public class Program
         Console.Error.WriteLine("[BRIDGE] Hardware monitoramento iniciado");
         Console.Out.NewLine = "\n";
 
+        // Thread para ler comandos de controle do stdin
+        var stdinThread = new Thread(ReadStdinCommands);
+        stdinThread.IsBackground = true;
+        stdinThread.Start();
+
         var timer = new Timer(SendHardwareData, null, 0, 1000);
         Thread.Sleep(Timeout.Infinite);
+    }
+
+    private static void ReadStdinCommands()
+    {
+        try
+        {
+            string? line;
+            while ((line = Console.ReadLine()) != null)
+            {
+                if (string.IsNullOrWhiteSpace(line)) continue;
+                try
+                {
+                    var cmd = JsonSerializer.Deserialize<FanControlCommand>(line, JsonOptions);
+                    if (cmd != null && !string.IsNullOrEmpty(cmd.Fan) && cmd.Pwm.HasValue)
+                    {
+                        SetFanControl(cmd.Fan, Math.Clamp(cmd.Pwm.Value, 0, 100));
+                    }
+                }
+                catch (JsonException ex)
+                {
+                    Console.Error.WriteLine("[BRIDGE] Comando inválido: " + ex.Message);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine("[BRIDGE] Erro no stdin: " + ex.Message);
+        }
+    }
+
+    private static void SetFanControl(string fanName, double pwm)
+    {
+        float val = (float)Math.Clamp(pwm, 0.0, 100.0);
+        foreach (var hardware in _computer.Hardware)
+        {
+            hardware.Update();
+            foreach (var sensor in hardware.Sensors)
+            {
+                if (sensor.SensorType == SensorType.Fan && sensor.Control != null)
+                {
+                    if (sensor.Name.IndexOf(fanName, StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        sensor.Control.SetSoftware(val);
+                        Console.Error.WriteLine($"[BRIDGE] Fan control: {sensor.Name} → {pwm}%");
+                        return;
+                    }
+                }
+            }
+            foreach (var sub in hardware.SubHardware)
+            {
+                sub.Update();
+                foreach (var sensor in sub.Sensors)
+                {
+                    if (sensor.SensorType == SensorType.Fan && sensor.Control != null)
+                    {
+                        if (sensor.Name.IndexOf(fanName, StringComparison.OrdinalIgnoreCase) >= 0)
+                        {
+                            sensor.Control.SetSoftware(val);
+                            Console.Error.WriteLine($"[BRIDGE] Fan control: {sensor.Name} → {pwm}%");
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+        Console.Error.WriteLine($"[BRIDGE] Fan '{fanName}' não encontrado ou sem controle");
     }
 
     private static void SendHardwareData(object? state)
