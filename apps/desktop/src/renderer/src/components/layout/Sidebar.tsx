@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Cpu, Monitor, MemoryStick, HardDrive,
   CircuitBoard, Activity, Fan, Network, BarChart3,
   Bell, Settings, Info, ChevronLeft, ChevronRight,
-  Gauge,
+  Gauge, Eye,
 } from 'lucide-react';
 import { useStore } from '../../store/useStore';
 
@@ -20,6 +20,7 @@ const menuItems = [
   { path: '/network', icon: Network, label: 'Rede' },
   { path: '/history', icon: BarChart3, label: 'Histórico' },
   { path: '/alerts', icon: Bell, label: 'Alertas' },
+  { path: '/overlay', icon: Eye, label: 'Overlay' },
   { path: '/settings', icon: Settings, label: 'Configurações' },
   { path: '/about', icon: Info, label: 'Sobre' },
 ];

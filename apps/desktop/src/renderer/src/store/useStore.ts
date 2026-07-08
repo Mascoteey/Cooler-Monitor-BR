@@ -28,6 +28,22 @@ interface AppState {
   // Settings
   settings: Record<string, unknown>;
   setSettings: (settings: Record<string, unknown>) => void;
+
+  // Overlay
+  overlayConfig: {
+    enabled: boolean;
+    opacity: number;
+    position: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+    showCpu: boolean;
+    showGpu: boolean;
+    showRam: boolean;
+    showFans: boolean;
+    showFps: boolean;
+    showClock: boolean;
+    showTemp: boolean;
+    fontSize: 'small' | 'medium' | 'large';
+  };
+  setOverlayConfig: (config: Partial<typeof state.overlayConfig>) => void;
 }
 
 export const useStore = create<AppState>((set, get) => ({
@@ -76,4 +92,20 @@ export const useStore = create<AppState>((set, get) => ({
 
   settings: {},
   setSettings: (settings) => set({ settings }),
+
+  overlayConfig: {
+    enabled: false,
+    opacity: 0.75,
+    position: 'top-right',
+    showCpu: true,
+    showGpu: true,
+    showRam: true,
+    showFans: false,
+    showFps: true,
+    showClock: false,
+    showTemp: true,
+    fontSize: 'medium',
+  },
+  setOverlayConfig: (config) =>
+    set((s) => ({ overlayConfig: { ...s.overlayConfig, ...config } })),
 }));

@@ -19,6 +19,13 @@ const api = {
     ipcRenderer.on('update-status', listener);
     return () => ipcRenderer.removeListener('update-status', listener);
   },
+
+  // Overlay
+  showOverlay: () => ipcRenderer.send('overlay-show'),
+  hideOverlay: () => ipcRenderer.send('overlay-hide'),
+  toggleOverlay: () => ipcRenderer.send('overlay-toggle'),
+  updateOverlay: (config: unknown) => ipcRenderer.send('overlay-update', config),
+  isOverlayVisible: () => ipcRenderer.invoke('overlay-visible'),
 };
 
 contextBridge.exposeInMainWorld('electronAPI', api);

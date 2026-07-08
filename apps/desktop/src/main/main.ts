@@ -12,6 +12,7 @@ import { normalizeBridgeData } from './normalizeData';
 const isDev = !app.isPackaged;
 let isQuitting = false;
 let mainWindow: BrowserWindow | null = null;
+let overlayWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
 let hardwareProcess: ChildProcess | null = null;
 let wss: WebSocketServer | null = null;
@@ -79,6 +80,55 @@ function createWindow(): void {
   });
 }
 
+function createOverlayWindow(): void {
+  overlayWindow = new BrowserWindow({
+    width: 400,
+    height: 300,
+    transparent: true,
+    frame: false,
+    resizable: false,
+    skipTaskbar: true,
+    alwaysOnTop: true,
+    focusable: false,
+    show: store.get('overlay.enabled') as boolean,
+    backgroundColor: '#00000000',
+    webPreferences: {
+      preload: join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: false,
+    },
+  });
+
+  overlayWindow.setIgnoreMouseEvents(true, { forward: true });
+
+  if (isDev) {
+    overlayWindow.loadURL('http://localhost:5173/#/overlay-display').catch(() => {
+      overlayWindow?.loadFile(join(__dirname, '../../dist/index.html'), { hash: '/overlay-display' });
+    });
+  } else {
+    overlayWindow.loadFile(join(__dirname, '../../dist/index.html'), { hash: '/overlay-display' });
+  }
+
+  overlayWindow.on('closed', () => { overlayWindow = null; });
+}
+
+function sendToOverlay(channel: string, data: unknown): void {
+  if (overlayWindow && !overlayWindow.isDestroyed()) {
+    overlayWindow.webContents.send(channel, data);
+  }
+}
+
+function toggleOverlay(visible?: boolean): void {
+  const show = visible ?? !overlayWindow?.isVisible();
+  if (!overlayWindow || overlayWindow.isDestroyed()) {
+    if (show) createOverlayWindow();
+    return;
+  }
+  if (show) overlayWindow.show();
+  else overlayWindow.hide();
+}
+
 function createTray(): void {
   const iconPath = join(__dirname, '../../assets/icons/tray-icon.png');
   let trayIcon: Electron.NativeImage;
@@ -143,6 +193,7 @@ function startHardwareBridge(): void {
             const sensorData = JSON.parse(line);
             const normalized = normalizeBridgeData(sensorData);
             mainWindow?.webContents.send('hardware-data', normalized);
+            sendToOverlay('hardware-data', normalized);
             broadcastSensorData(normalized);
           } catch (e) {
             log.warn('Bridge JSON malformed:', line.trim().substring(0, 80));
@@ -273,6 +324,7 @@ function simulateHardwareData(): void {
     const data = getRandomSensorData();
     data.sensors = allSensors.map((s) => ({ ...s, value: Math.random() * 100 }));
     mainWindow?.webContents.send('hardware-data', data);
+    sendToOverlay('hardware-data', data);
     broadcastSensorData(data);
   }, store.get('updateInterval') as number);
 }
@@ -323,13 +375,34 @@ ipcMain.handle('get-window-state', () => {
   };
 });
 
-ipcMain.on('window-minimize', () => mainWindow?.minimize());
+ipcMain.on('window-minimize', () => {
+  mainWindow?.minimize();
+  const overlayEnabled = store.get('overlay.enabled') as boolean;
+  if (overlayEnabled && overlayWindow && !overlayWindow.isDestroyed()) {
+    overlayWindow.show();
+  }
+});
 ipcMain.on('window-maximize', () => {
   if (mainWindow?.isMaximized()) mainWindow.unmaximize();
   else mainWindow?.maximize();
 });
 ipcMain.on('window-close', () => mainWindow?.close());
 ipcMain.on('window-hide', () => mainWindow?.hide());
+
+ipcMain.on('overlay-show', () => toggleOverlay(true));
+ipcMain.on('overlay-hide', () => toggleOverlay(false));
+ipcMain.on('overlay-toggle', () => toggleOverlay());
+ipcMain.on('overlay-update', (_event, config: unknown) => {
+  store.set('overlay', config);
+  sendToOverlay('overlay-config', config);
+  if (overlayWindow && !overlayWindow.isDestroyed()) {
+    if ((config as any)?.enabled) overlayWindow.show();
+    else overlayWindow.hide();
+  }
+});
+ipcMain.handle('overlay-visible', () => {
+  return overlayWindow?.isVisible() || false;
+});
 
 ipcMain.on('check-for-updates', () => {
   autoUpdater.checkForUpdates();
@@ -355,9 +428,16 @@ autoUpdater.on('update-downloaded', () => {
 app.whenReady().then(() => {
   log.info('COOLER MONITOR BR starting...');
   createWindow();
+  createOverlayWindow();
   createTray();
   startWebSocketServer();
   startHardwareBridge();
+
+  mainWindow?.on('restore', () => {
+    if (overlayWindow && !overlayWindow.isDestroyed()) {
+      overlayWindow.hide();
+    }
+  });
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
